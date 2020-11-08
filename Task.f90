@@ -1,4 +1,5 @@
 module Task
+  use :: mpi
   implicit none
   contains
 
@@ -7,8 +8,12 @@ module Task
     real(8), intent(in), dimension(:,:) :: A
     integer(4), intent(out) :: x1, y1, x2, y2
     integer(4) :: n, L, R, Up, Down, m, tmp
+    integer(4) :: mpiErr, mpiSize, mpiRank
     real(8), allocatable :: current_column(:)
     real(8) :: current_sum, max_sum
+
+    call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)   ! кол-во связанных коммуникатором проц-ов
+    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре
 
     m = size(A, dim=1)
     n = size(A, dim=2)
