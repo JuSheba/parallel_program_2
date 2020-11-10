@@ -9,13 +9,13 @@ module Task
     integer(4), intent(out) :: x1, y1, x2, y2
     integer(4) :: n, L, R, Up, Down, m, tmp
     integer(4) :: mpiErr, mpiSize, mpiRank
+    integer(4), dimension(1) :: mpiRankMax
     real(8), allocatable :: current_column(:)
-    real(8) :: current_sum, max_sum
-
-    mpi_init(mpiErr)
+    real(8) :: current_sum
+    real(8), dimension(1) :: max_sum
 
     call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)   ! кол-во связанных коммуникатором проц-ов
-    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре (от 0 до SIZE-1)
+    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре (от 0 до size-1)
 
     m = size(A, dim=1)
     n = size(A, dim=2)
@@ -26,9 +26,9 @@ module Task
     y1=1
     x2=1
     y2=1
-    max_sum = A(1,1)
+    max_sum(1)= A(1,1)
 
-    do L = mpiRank + 1, n, mpiSize
+    do L = mpiRank + 1, n, mpiSize    ! каждому процессу по итерации и так до конца (+1, т.к. от нуля)
       current_column = A(:, L)
 
       do R = L, n
@@ -38,8 +38,8 @@ module Task
 
         call FindMaxInArray(current_column, current_sum, Up, Down)
 
-        if (current_sum > max_sum) then
-          max_sum = current_sum
+        if (current_sum > max_sum(1)) then
+          max_sum(1) = current_sum
           x1 = Up
           x2 = Down
           y1 = L
@@ -48,6 +48,11 @@ module Task
       end do
     end do
     deallocate(current_column)
+
+    call mpi_reduce(max_sum(1), max_sum(2), 1, MPI_REAL8, MPI_MAX, 0, MPI_COMM_WORLD, mpiErr) ! можно и Gather, но имхо в книжке понятнее написан  Reduce
+
+    
+
   end subroutine
 
   subroutine FindMaxInArray(A, Summ, Up, Down)
