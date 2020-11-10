@@ -12,8 +12,10 @@ module Task
     real(8), allocatable :: current_column(:)
     real(8) :: current_sum, max_sum
 
+    mpi_init(mpiErr)
+
     call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)   ! кол-во связанных коммуникатором проц-ов
-    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре
+    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре (от 0 до SIZE-1)
 
     m = size(A, dim=1)
     n = size(A, dim=2)
@@ -26,7 +28,7 @@ module Task
     y2=1
     max_sum = A(1,1)
 
-    do L = 1, n
+    do L = mpiRank + 1, n, mpiSize
       current_column = A(:, L)
 
       do R = L, n
