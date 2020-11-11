@@ -35,6 +35,9 @@ module Task
         if (R > L) then
           current_column = current_column + A(:, R)
         endif
+    cur_sum = 0
+    minus_pos = 0
+
 
         call FindMaxInArray(current_column, current_sum, Up, Down)
 
@@ -49,9 +52,21 @@ module Task
     end do
     deallocate(current_column)
 
-    call mpi_reduce(max_sum(1), max_sum(2), 1, MPI_REAL8, MPI_MAX, 0, MPI_COMM_WORLD, mpiErr) ! можно и Gather, но имхо в книжке понятнее написан  Reduce
+    call mpi_reduce(max_sum(1), max_sum(2), 1, MPI_REAL8,&
+                    MPI_MAX, 0, MPI_COMM_WORLD, mpiErr) ! можно и Gather, но имхо в книжке понятнее написан  Reduce
+    call mpi_bcast(max_sum(2), 1, MPI_REAL8, 0, MPI_COMM_WORLD, mpiErr)
+      mpiRankMax(1) = 0
+      if(max_sum(1) = max_sum(2)) then
+        mpiRankMax(1) = mpiRank
+      end if
 
-    
+    call mpi_reduce(mpiRankMax(1), mpiRankMax(2), 1, MPI_INTEGER4,&
+                    MPI_MAX, 0, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(mpiRankMax(2), 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(x1, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(y1, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(x2, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(y2, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
 
   end subroutine
 
