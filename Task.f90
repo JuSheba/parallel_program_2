@@ -57,7 +57,7 @@ module Task
 
     call mpi_reduce(mpiMaxRank, mpiGlobalMaxRank, 1, MPI_INTEGER4,&
                     MPI_MAX, 0, MPI_COMM_WORLD, mpiErr)
-    call mpi_bcast(mpiRankMax(2), 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(mpiGlobalMaxRank, 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, mpiErr)
     call mpi_bcast(x1, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
     call mpi_bcast(y1, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
     call mpi_bcast(x2, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
