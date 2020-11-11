@@ -10,7 +10,7 @@ program main
   allocate(A(1337, 1337))
 
   call random_number(A)
-  A = 2*A - 1d0
+  A = 2d0 * A - 1d0
 
   call mpi_init(mpiErr)
 
@@ -23,4 +23,4 @@ program main
 
   call mpi_finalize(mpiErr)
 
-end program 
+end program
