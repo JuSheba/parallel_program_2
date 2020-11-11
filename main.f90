@@ -14,6 +14,13 @@ program main
 
   call mpi_init(mpiErr)
 
-  
+  time1 = mpi_wtime()
+  call GetMaxCoordinates(A, x1, y1, x2, y2)
+  time2 = mpi_wtime()
+
+  write(*,*) 'Coordinates: ', x1, y1, x2, y2
+  write(*,*) 'Time: ', time2 - time1
 
   call mpi_finalize(mpiErr)
+
+end program 
