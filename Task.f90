@@ -8,14 +8,12 @@ module Task
     real(8), intent(in), dimension(:,:) :: A
     integer(4), intent(out) :: x1, y1, x2, y2
     integer(4) :: n, L, R, Up, Down, m, tmp
-    integer(4) :: mpiErr, mpiSize, mpiRank
-    integer(4), dimension(1) :: mpiRankMax
+    integer(4) :: mpiErr, mpiSize, mpiRank, mpiMaxRank, mpiGlobalMaxRank
     real(8), allocatable :: current_column(:)
-    real(8) :: current_sum
-    real(8), dimension(1) :: max_sum
+    real(8) :: current_sum, max_sum, max_sum_glob
 
-    call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)   ! кол-во связанных коммуникатором проц-ов
-    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)   ! номер процесса в комм-ре (от 0 до size-1)
+    call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)
+    call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)
 
     m = size(A, dim=1)
     n = size(A, dim=2)
@@ -28,21 +26,18 @@ module Task
     y2=1
     max_sum(1)= A(1,1)
 
-    do L = mpiRank + 1, n, mpiSize    ! каждому процессу по итерации и так до конца (+1, т.к. от нуля)
+    do L = mpiRank + 1, n, mpiSize
       current_column = A(:, L)
 
       do R = L, n
         if (R > L) then
           current_column = current_column + A(:, R)
         endif
-    cur_sum = 0
-    minus_pos = 0
-
 
         call FindMaxInArray(current_column, current_sum, Up, Down)
 
-        if (current_sum > max_sum(1)) then
-          max_sum(1) = current_sum
+        if (current_sum > max_sum) then
+          max_sum = current_sum
           x1 = Up
           x2 = Down
           y1 = L
@@ -52,21 +47,21 @@ module Task
     end do
     deallocate(current_column)
 
-    call mpi_reduce(max_sum(1), max_sum(2), 1, MPI_REAL8,&
-                    MPI_MAX, 0, MPI_COMM_WORLD, mpiErr) ! можно и Gather, но имхо в книжке понятнее написан  Reduce
-    call mpi_bcast(max_sum(2), 1, MPI_REAL8, 0, MPI_COMM_WORLD, mpiErr)
-      mpiRankMax(1) = 0
-      if(max_sum(1) = max_sum(2)) then
-        mpiRankMax(1) = mpiRank
-      end if
+    call mpi_reduce(max_sum, max_sum_glob, 1, MPI_REAL8,&
+                    MPI_MAX, 0, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(max_sum_glob, 1, MPI_REAL8, 0, MPI_COMM_WORLD, mpiErr)
+    mpiMaxRank = 0
+    if(max_sum == max_sum_glob) then
+      mpiMaxRank = mpiRank
+    end if
 
-    call mpi_reduce(mpiRankMax(1), mpiRankMax(2), 1, MPI_INTEGER4,&
+    call mpi_reduce(mpiMaxRank, mpiGlobalMaxRank, 1, MPI_INTEGER4,&
                     MPI_MAX, 0, MPI_COMM_WORLD, mpiErr)
     call mpi_bcast(mpiRankMax(2), 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, mpiErr)
-    call mpi_bcast(x1, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
-    call mpi_bcast(y1, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
-    call mpi_bcast(x2, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
-    call mpi_bcast(y2, 1, MPI_INTEGER4, mpiRankMax(2), MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(x1, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(y1, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(x2, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
+    call mpi_bcast(y2, 1, MPI_INTEGER4, mpiGlobalMaxRank, MPI_COMM_WORLD, mpiErr)
 
   end subroutine
 
