@@ -24,7 +24,7 @@ module Task
     y1=1
     x2=1
     y2=1
-    max_sum(1)= A(1,1)
+    max_sum = A(1,1)
 
     do L = mpiRank + 1, n, mpiSize
       current_column = A(:, L)
